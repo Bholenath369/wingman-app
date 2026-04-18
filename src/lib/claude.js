@@ -1,7 +1,7 @@
 // src/lib/claude.js
 // Central API layer — all Claude calls go through the backend proxy
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 async function callClaude({ system, userMessage, maxTokens = 800 }) {
   const res = await fetch(`${API_URL}/api/claude`, {
