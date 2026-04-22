@@ -2189,3 +2189,47 @@ canvas.particle-bg {
   position: fixed;
   inset: 0;
 }
+
+/* ── WINGMAN v3 Animation Additions ─────────────────────── */
+
+/* Shimmer slide for skeleton loaders */
+@keyframes shimmerSlide {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Ripple effect on buttons */
+@keyframes rippleAnim {
+  from { transform: scale(0); opacity: 1; }
+  to   { transform: scale(2); opacity: 0; }
+}
+
+/* Premium unlock flash */
+@keyframes premiumFlash {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Float animation */
+@keyframes floatGlow {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-20px) scale(1.1); }
+}
+
+/* Tab blur morph transition */
+@keyframes tabExit {
+  from { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+  to   { opacity: 0; transform: translateX(20px) scale(0.95); filter: blur(8px); }
+}
+
+@keyframes tabEnter {
+  from { opacity: 0; transform: translateX(-20px) scale(0.95); filter: blur(8px); }
+  to   { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+}
+
+/* Heartbeat pulse */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  25%      { transform: scale(1.15); }
+  50%      { transform: scale(1); }
+}
