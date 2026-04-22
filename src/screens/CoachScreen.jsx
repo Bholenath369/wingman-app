@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { rewriteMessage } from "../lib/claude";
+import { useUsage } from "../lib/useUsage";
+import PremiumGate from "../components/PremiumGate";
 
 const STYLES = [
   { key: "attractive", label: "More attractive" },
@@ -8,38 +10,24 @@ const STYLES = [
   { key: "playful",    label: "Playful"          },
 ];
 
-const FREE_LIMIT = 5;
-
-function getTodayKey() {
-  return `wingman_rewrites_${new Date().toISOString().slice(0, 10)}`;
-}
-
-function getSavedCount() {
-  try {
-    const key = getTodayKey();
-    return parseInt(localStorage.getItem(key) || "0", 10);
-  } catch {
-    return 0;
-  }
-}
-
-function saveCount(n) {
-  try {
-    localStorage.setItem(getTodayKey(), String(n));
-  } catch {}
-}
-
 export default function CoachScreen() {
-  const [text, setText]         = useState("");
-  const [style, setStyle]       = useState(null);
-  const [result, setResult]     = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [count, setCount]       = useState(getSavedCount);
-  const [copied, setCopied]     = useState(false);
-  const [error, setError]       = useState("");
+  const [text, setText]       = useState("");
+  const [style, setStyle]     = useState(null);
+  const [result, setResult]   = useState("");
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied]   = useState(false);
+  const [error, setError]     = useState("");
+  const { consume, remaining, isPremium, loading: usageLoading } = useUsage();
 
   async function rewrite(s) {
     if (!text.trim()) return;
+
+    const check = await consume("rewrite");
+    if (!check.allowed) {
+      setError("Daily limit reached.");
+      return;
+    }
+
     setStyle(s);
     setLoading(true);
     setResult("");
@@ -47,9 +35,8 @@ export default function CoachScreen() {
     try {
       const out = await rewriteMessage(text, s);
       setResult(out.trim());
-      setCount((c) => { const next = c + 1; saveCount(next); return next; });
     } catch {
-      setError("Couldn't reach AI — check your API key.");
+      setError("Couldn't reach AI — try again in a moment.");
     } finally {
       setLoading(false);
     }
@@ -61,7 +48,8 @@ export default function CoachScreen() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const hitLimit = count >= FREE_LIMIT;
+  const rewritesLeft = remaining?.rewrite ?? 0;
+  const hitLimit = !usageLoading && !isPremium && rewritesLeft === 0;
 
   return (
     <div>
@@ -75,7 +63,15 @@ export default function CoachScreen() {
       </div>
 
       {error && (
-        <div style={{ background: "rgba(239,68,68,0.1)", border: "0.5px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#FCA5A5" }}>
+        <div style={{
+          background: "rgba(239,68,68,0.1)",
+          border: "0.5px solid rgba(239,68,68,0.3)",
+          borderRadius: 10,
+          padding: "10px 14px",
+          marginBottom: 14,
+          fontSize: 13,
+          color: "#FCA5A5",
+        }}>
           {error}
         </div>
       )}
@@ -125,18 +121,31 @@ export default function CoachScreen() {
             <button className="btn-ghost" onClick={() => rewrite(style)}>Regenerate</button>
           </div>
 
-          <div style={{ textAlign: "center", marginTop: 14, fontSize: 12, color: "var(--text3)" }}>
-            {FREE_LIMIT - count} free rewrites remaining today
-          </div>
+          {!isPremium && (
+            <div style={{
+              textAlign: "center",
+              marginTop: 14,
+              fontSize: 12,
+              color: "var(--text3)",
+            }}>
+              {rewritesLeft} free rewrites remaining today
+            </div>
+          )}
         </>
       )}
 
       {hitLimit && (
-        <div className="premium-gate" style={{ marginTop: 16 }}>
-          <h3>Daily limit reached</h3>
-          <p>Upgrade for unlimited rewrites, advanced coaching, and personality-matched suggestions.</p>
-          <button className="premium-btn">Unlock Premium — $9.99/mo</button>
-        </div>
+        <PremiumGate
+          title="Daily limit reached"
+          description="Upgrade for unlimited rewrites and advanced coaching."
+          features={[
+            "Unlimited message rewrites",
+            "Unlimited screenshot analyses",
+            "All 4 practice personas",
+            "Profile photo analyzer",
+            "Conversation scoring",
+          ]}
+        />
       )}
 
       {!result && !loading && !hitLimit && (
@@ -147,7 +156,19 @@ export default function CoachScreen() {
             "Avoid double-texting within 30 minutes of sending.",
             "Match their message length — don't over-invest early.",
           ].map((tip, i) => (
-            <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 12px", background: "var(--bg2)", borderRadius: "var(--r-xs)", marginBottom: 8, border: "0.5px solid var(--border)", fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>
+            <div key={i} style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "flex-start",
+              padding: "10px 12px",
+              background: "var(--bg2)",
+              borderRadius: "var(--r-xs)",
+              marginBottom: 8,
+              border: "0.5px solid var(--border)",
+              fontSize: 13,
+              color: "var(--text2)",
+              lineHeight: 1.5,
+            }}>
               <span style={{ color: "var(--accent)", flexShrink: 0 }}>✦</span>
               {tip}
             </div>

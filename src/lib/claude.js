@@ -3,11 +3,15 @@
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
-async function callClaude({ system, userMessage, maxTokens = 800 }) {
+async function callClaude({ system, userMessage, maxTokens = 800, image = null }) {
+  const body = { system, userMessage, maxTokens };
+  if (image) body.image = image;
+
   const res = await fetch(`${API_URL}/api/claude`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ system, userMessage, maxTokens }),
+    credentials: "include",
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -17,9 +21,65 @@ async function callClaude({ system, userMessage, maxTokens = 800 }) {
   return data.text ?? "";
 }
 
-// ── 1. Screenshot Analyzer ───────────────────────────────────
+// Strip data URL prefix to get pure base64
+function extractBase64(dataUrl) {
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) return null;
+  return { mediaType: match[1], data: match[2] };
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── 1a. Screenshot Analyzer (text version) ───────────────────
 export async function analyzeScreenshot(conversationText) {
-  const system = `You are an elite dating coach with deep expertise in attraction psychology,
+  const system = SCREENSHOT_SYSTEM;
+  const raw = await callClaude({
+    system,
+    userMessage: `Here is the conversation to reply to:\n\n${conversationText}\n\nGenerate 4 reply options.`,
+    maxTokens: 700,
+  });
+  return parseReplies(raw);
+}
+
+// ── 1b. Screenshot Analyzer (VISION — real image) ────────────
+export async function analyzeScreenshotImage(file) {
+  const dataUrl = await fileToBase64(file);
+  const img = extractBase64(dataUrl);
+  if (!img) throw new Error("Invalid image file");
+
+  const system = SCREENSHOT_SYSTEM;
+  const raw = await callClaude({
+    system,
+    userMessage:
+      "Read this chat screenshot carefully. Identify who sent which message (left bubbles vs right bubbles). " +
+      "Then generate 4 reply options that continue the conversation naturally. Return JSON only.",
+    image: img,
+    maxTokens: 900,
+  });
+  return parseReplies(raw);
+}
+
+function parseReplies(raw) {
+  try {
+    const clean = raw.replace(/```json|```/g, "").trim();
+    // Find the JSON array even if model added preamble
+    const start = clean.indexOf("[");
+    const end = clean.lastIndexOf("]");
+    if (start === -1 || end === -1) throw new Error("no JSON array");
+    return JSON.parse(clean.slice(start, end + 1));
+  } catch {
+    return FALLBACK_REPLIES;
+  }
+}
+
+const SCREENSHOT_SYSTEM = `You are an elite dating coach with deep expertise in attraction psychology,
 communication dynamics, and emotional intelligence. You analyze conversation screenshots
 and generate reply options that feel human, confident, and emotionally aware.
 
@@ -40,20 +100,6 @@ Rules:
 - Funny: genuinely clever, not forced
 - Confident: secure, doesn't seek approval
 - Emotional: warm, vulnerable without being needy`;
-
-  const raw = await callClaude({
-    system,
-    userMessage: `Here is the conversation to reply to:\n\n${conversationText}\n\nGenerate 4 reply options.`,
-    maxTokens: 600,
-  });
-
-  try {
-    const clean = raw.replace(/```json|```/g, "").trim();
-    return JSON.parse(clean);
-  } catch {
-    return FALLBACK_REPLIES;
-  }
-}
 
 // ── 2. Personality Detection ─────────────────────────────────
 export async function detectPersonality(conversationText) {
@@ -82,12 +128,14 @@ Be specific, psychologically accurate, and never generic.`;
   const raw = await callClaude({
     system,
     userMessage: `Analyze this conversation:\n\n${conversationText}`,
-    maxTokens: 500,
+    maxTokens: 600,
   });
 
   try {
     const clean = raw.replace(/```json|```/g, "").trim();
-    return JSON.parse(clean);
+    const start = clean.indexOf("{");
+    const end = clean.lastIndexOf("}");
+    return JSON.parse(clean.slice(start, end + 1));
   } catch {
     return FALLBACK_PERSONALITY;
   }
@@ -152,7 +200,117 @@ Keep it SHORT — real people don't write paragraphs in texts.`;
   return callClaude({
     system,
     userMessage: `Conversation so far:\n${historyText}\n\nThem: ${latestMessage}\n\nYour reply:`,
-    maxTokens: 100,
+    maxTokens: 150,
+  });
+}
+
+// ── 5. Conversation Scoring (Premium) ────────────────────────
+export async function scoreConversation(conversationHistory, persona) {
+  const system = `You are a conversation scoring expert. Analyze a practice conversation between a user
+and an AI persona, then grade the user's performance across key dating-communication dimensions.
+
+Respond ONLY with valid JSON, nothing else:
+{
+  "overall": 78,
+  "scores": {
+    "confidence": 82,
+    "humor": 65,
+    "pacing": 70,
+    "curiosity": 88,
+    "authenticity": 75
+  },
+  "strengths": ["Short specific point", "Another specific win"],
+  "improvements": ["Specific actionable note", "Another actionable note"],
+  "nextMove": "One short coaching tip for their next message"
+}
+
+All scores are integers 0-100.
+Be specific to what actually happened in the conversation — no generic advice.
+Strengths and improvements should reference actual lines or moments when possible.`;
+
+  const convoText = conversationHistory
+    .map((m) => `${m.role === "user" ? "USER" : "THEM"}: ${m.content}`)
+    .join("\n");
+
+  const raw = await callClaude({
+    system,
+    userMessage: `Persona type: ${persona}\n\nConversation:\n${convoText}\n\nScore this conversation.`,
+    maxTokens: 700,
+  });
+
+  try {
+    const clean = raw.replace(/```json|```/g, "").trim();
+    const start = clean.indexOf("{");
+    const end = clean.lastIndexOf("}");
+    return JSON.parse(clean.slice(start, end + 1));
+  } catch {
+    return FALLBACK_SCORE;
+  }
+}
+
+// ── 6. Profile Photo / Bio Analyzer (Premium) ────────────────
+export async function analyzeProfilePhoto(file) {
+  const dataUrl = await fileToBase64(file);
+  const img = extractBase64(dataUrl);
+  if (!img) throw new Error("Invalid image file");
+
+  const system = `You are an elite dating coach specializing in profile optimization.
+Analyze a dating profile photo for how effectively it attracts matches. Consider: lighting,
+composition, expression, outfit, background, what the viewer's eye goes to, and what vibe it projects.
+
+Respond ONLY with valid JSON, nothing else:
+{
+  "overall": 74,
+  "scores": {
+    "lighting": 80,
+    "expression": 65,
+    "composition": 78,
+    "styling": 70,
+    "attractivenessSignal": 75
+  },
+  "strengths": ["Specific thing that works", "Another specific win"],
+  "improvements": ["Concrete actionable change", "Another concrete change"],
+  "suggestedUse": "main" | "secondary" | "replace"
+}
+
+Be honest but kind. No generic advice. Reference what you actually see in the photo.
+Never comment on or guess the person's race, exact age, or identifying features.`;
+
+  const raw = await callClaude({
+    system,
+    userMessage:
+      "Analyze this dating profile photo and score it. Return JSON only.",
+    image: img,
+    maxTokens: 700,
+  });
+
+  try {
+    const clean = raw.replace(/```json|```/g, "").trim();
+    const start = clean.indexOf("{");
+    const end = clean.lastIndexOf("}");
+    return JSON.parse(clean.slice(start, end + 1));
+  } catch {
+    return FALLBACK_PHOTO_SCORE;
+  }
+}
+
+export async function rewriteBio(currentBio, vibe = "confident") {
+  const system = `You are an elite dating coach who writes Tinder/Hinge/Bumble bios that get matches.
+Rewrite the user's bio to be more effective. Vibe requested: ${vibe}.
+
+Rules:
+- Keep it under 150 characters unless the original was longer
+- Avoid clichés ("love to laugh", "work hard play hard", "ask me anything")
+- Show personality through specific details, not generic claims
+- Include one thing that invites a reply
+- Sound like a real person, not marketing copy
+
+Respond with ONLY the rewritten bio. No explanation, no quotes.`;
+
+  return callClaude({
+    system,
+    userMessage: `Current bio:\n\n${currentBio}\n\nRewrite it.`,
+    maxTokens: 200,
   });
 }
 
@@ -169,8 +327,24 @@ const FALLBACK_PERSONALITY = {
   interest: 82, warmth: 75, testing: 60, playfulness: 88,
   traits: ["Extrovert leaning", "Playful", "Emotionally open", "Selective"],
   mistakes: [
-    { type: "warn", text: "You responded too fast (under 30s) — signaled high anxiety, reduced perceived value." },
-    { type: "warn", text: "Your message ended with a question — you're seeking approval. Try a statement instead." },
-    { type: "good", text: "Your humor landed well — she matched your energy and escalated warmth." },
+    { type: "warn", text: "You responded too fast — signaled high anxiety." },
+    { type: "warn", text: "Your message ended with a question — try a statement instead." },
+    { type: "good", text: "Your humor landed well — she matched your energy." },
   ],
+};
+
+const FALLBACK_SCORE = {
+  overall: 72,
+  scores: { confidence: 75, humor: 68, pacing: 70, curiosity: 78, authenticity: 72 },
+  strengths: ["You kept responses concise", "You showed genuine curiosity"],
+  improvements: ["Add more playful tension", "Avoid asking two questions in a row"],
+  nextMove: "Send a short statement that makes her curious, not a question.",
+};
+
+const FALLBACK_PHOTO_SCORE = {
+  overall: 70,
+  scores: { lighting: 72, expression: 68, composition: 74, styling: 70, attractivenessSignal: 68 },
+  strengths: ["Clear face visibility", "Natural environment"],
+  improvements: ["Try a genuine smile that reaches your eyes", "Shoot from slightly above eye level"],
+  suggestedUse: "secondary",
 };

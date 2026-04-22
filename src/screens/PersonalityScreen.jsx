@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { detectPersonality } from "../lib/claude";
+import { trackAction, incrementChallenge } from "../lib/stats";
 
 const DEMO_CONVO = `Her: A million random thoughts, but talking to you is definitely the nicest one right now 🌙
 Her: worth it if it means you're thinking about me too
@@ -15,6 +16,7 @@ export default function PersonalityScreen() {
   const [animated, setAnimated] = useState(false);
   const [convoText, setConvoText] = useState("");
   const [error, setError]       = useState("");
+  const [showXPGain, setShowXPGain] = useState(null);
   const barsRef = useRef(false);
 
   async function analyze(text) {
@@ -26,6 +28,12 @@ export default function PersonalityScreen() {
     try {
       const result = await detectPersonality(text);
       setData(result);
+      
+      // Track action for stats
+      trackAction('analyze');
+      incrementChallenge(1);
+      setShowXPGain(50);
+      setTimeout(() => setShowXPGain(null), 2000);
     } catch {
       setError("Couldn't reach AI — check your API key.");
     } finally {
@@ -97,6 +105,12 @@ export default function PersonalityScreen() {
       {data && (
         <>
           <div className="section-label" style={{ marginTop: 4 }}>Personality analysis</div>
+
+          {showXPGain && (
+            <div className="xp-gain" style={{ animation: "floatUp 2s ease-out forwards" }}>
+              +{showXPGain} XP ⚡
+            </div>
+          )}
 
           <div className="insight-box">
             <div className="insight-label">AI insight</div>
