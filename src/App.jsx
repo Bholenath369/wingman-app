@@ -1,14 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import AnalyzeScreen     from "./screens/AnalyzeScreen";
-import PersonalityScreen from "./screens/PersonalityScreen";
-import CoachScreen       from "./screens/CoachScreen";
-import SimulateScreen    from "./screens/SimulateScreen";
-import ProfileScreen     from "./screens/ProfileScreen";
-import ParticleBackground  from "./components/ParticleBackground";
-import TabTransition       from "./components/TabTransition";
-import OnboardingModal     from "./components/OnboardingModal";
-import { redeemUpgrade }   from "./lib/useUsage";
-import { getUserVibe }     from "./lib/claude";
+import { useAuth } from "@clerk/clerk-react";
+import AnalyzeScreen      from "./screens/AnalyzeScreen";
+import PersonalityScreen  from "./screens/PersonalityScreen";
+import CoachScreen        from "./screens/CoachScreen";
+import SimulateScreen     from "./screens/SimulateScreen";
+import ProfileScreen      from "./screens/ProfileScreen";
+import LoginScreen        from "./screens/LoginScreen";
+import SSOCallback        from "./screens/SSOCallback";
+import ParticleBackground from "./components/ParticleBackground";
+import TabTransition      from "./components/TabTransition";
+import OnboardingModal    from "./components/OnboardingModal";
+import UserMenu           from "./components/UserMenu";
+import { redeemUpgrade, useUsage } from "./lib/useUsage";
+import { getUserVibe }    from "./lib/claude";
 import { addRipple, premiumUnlockCelebration, haptic } from "./lib/animations";
 import "./index.css";
 
@@ -21,17 +25,33 @@ const TABS = [
 ];
 
 export default function App() {
-  const [tab, setTab]             = useState("analyze");
+  const { isSignedIn, isLoaded } = useAuth();
+
+  // Show SSO callback screen when Clerk redirects back from OAuth
+  if (isLoaded && window.location.hash.startsWith("#/sso-callback")) {
+    return <SSOCallback />;
+  }
+
+  // While Clerk loads, show nothing (avoids flash of login screen)
+  if (!isLoaded) return null;
+
+  // Not signed in → full-screen login wall
+  if (!isSignedIn) return <LoginScreen />;
+
+  return <AppInner />;
+}
+
+function AppInner() {
+  const { isPremium } = useUsage();
+  const [tab, setTab]           = useState("analyze");
   const [upgradeStatus, setUpgradeStatus] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const navBtnRefs = useRef([]);
 
-  // Add ripple to nav buttons on mount
   useEffect(() => {
     navBtnRefs.current.forEach((el) => addRipple(el));
   }, []);
 
-  // First-visit onboarding
   useEffect(() => {
     if (!getUserVibe()) {
       const t = setTimeout(() => setShowOnboarding(true), 900);
@@ -76,13 +96,18 @@ export default function App() {
       )}
 
       {upgradeStatus === "success" && (
-        <div style={successToast}>✓ Welcome to Premium! Reloading...</div>
+        <div style={successToast}>✓ Welcome to Premium! Reloading…</div>
       )}
       {upgradeStatus === "cancelled" && (
         <div style={cancelToast}>Upgrade cancelled — no charge</div>
       )}
 
       <nav className="bottom-nav">
+        {/* User avatar sits at the far left of the nav bar */}
+        <div style={{ display: "flex", alignItems: "center", paddingLeft: 8 }}>
+          <UserMenu isPremium={isPremium} />
+        </div>
+
         {TABS.map((t, i) => (
           <button
             key={t.id}
