@@ -2,6 +2,15 @@
 // Central API layer — all Claude calls go through the backend proxy
 
 const API_URL = import.meta.env.VITE_API_URL || "";
+const VIBE_KEY = "wingman_user_vibe";
+
+// ── User vibe persistence (localStorage) ─────────────────────
+export function getUserVibe() {
+  try { return JSON.parse(localStorage.getItem(VIBE_KEY)); } catch { return null; }
+}
+export function setUserVibe(vibe) {
+  try { localStorage.setItem(VIBE_KEY, JSON.stringify(vibe)); } catch {}
+}
 
 async function callClaude({ system, userMessage, maxTokens = 800, image = null }) {
   const body = { system, userMessage, maxTokens };
@@ -77,6 +86,82 @@ function parseReplies(raw) {
   } catch {
     return FALLBACK_REPLIES;
   }
+}
+
+function parseSmartResult(raw) {
+  try {
+    const clean = raw.replace(/```json|```/g, "").trim();
+    const start = clean.indexOf("{");
+    const end = clean.lastIndexOf("}");
+    if (start === -1 || end === -1) throw new Error("no JSON object");
+    const parsed = JSON.parse(clean.slice(start, end + 1));
+    return {
+      context: parsed.context || FALLBACK_CONTEXT,
+      replies: Array.isArray(parsed.replies) ? parsed.replies : FALLBACK_REPLIES,
+    };
+  } catch {
+    return { context: FALLBACK_CONTEXT, replies: FALLBACK_REPLIES };
+  }
+}
+
+const SMART_SYSTEM = `You are an elite dating coach. Analyze the conversation and generate smart reply options.
+
+Respond ONLY with a JSON object matching this exact shape:
+{
+  "context": {
+    "stage": "first_message" | "early_chat" | "building_rapport" | "dying_conversation" | "post_date",
+    "temperature": "cold" | "cool" | "warm" | "hot",
+    "theyFeeling": "curious" | "playful" | "guarded" | "excited" | "bored" | "interested" | null,
+    "risk": "being_too_eager" | "going_too_slow" | "low_energy" | "over_qualifying" | null
+  },
+  "replies": [
+    { "type": "flirty",    "emoji": "😏", "text": "..." },
+    { "type": "funny",     "emoji": "😂", "text": "..." },
+    { "type": "confident", "emoji": "😎", "text": "..." },
+    { "type": "emotional", "emoji": "❤️", "text": "..." }
+  ]
+}
+
+Rules:
+- Each reply must feel natural and human, not like AI wrote it
+- No more than 2 sentences per reply
+- Flirty: subtly suggestive, not explicit
+- Funny: genuinely clever, not forced
+- Confident: secure, doesn't seek approval
+- Emotional: warm, vulnerable without being needy
+- NEVER use generic pickup lines`;
+
+// ── 1c. Smart Screenshot Analyzer (text version) ─────────────
+export async function analyzeScreenshotSmart(conversationText, { avoidStyles = [] } = {}) {
+  const avoidNote = avoidStyles.length
+    ? `\n\nThe user disliked these styles: ${avoidStyles.join(", ")}. Generate different alternatives.`
+    : "";
+  const raw = await callClaude({
+    system: SMART_SYSTEM,
+    userMessage: `Analyze this conversation and generate 4 reply options.\n\n${conversationText}${avoidNote}`,
+    maxTokens: 900,
+  });
+  return parseSmartResult(raw);
+}
+
+// ── 1d. Smart Screenshot Analyzer (VISION) ───────────────────
+export async function analyzeScreenshotImageSmart(file, { avoidStyles = [] } = {}) {
+  const dataUrl = await fileToBase64(file);
+  const img = extractBase64(dataUrl);
+  if (!img) throw new Error("Invalid image file");
+
+  const avoidNote = avoidStyles.length
+    ? ` The user disliked these styles: ${avoidStyles.join(", ")}. Generate different alternatives.`
+    : "";
+  const raw = await callClaude({
+    system: SMART_SYSTEM,
+    userMessage:
+      "Read this chat screenshot. Identify who sent which message (left vs right bubbles). " +
+      "Analyze the conversation context and generate 4 reply options. Return JSON only." + avoidNote,
+    image: img,
+    maxTokens: 1000,
+  });
+  return parseSmartResult(raw);
 }
 
 const SCREENSHOT_SYSTEM = `You are an elite dating coach with deep expertise in attraction psychology,
@@ -315,6 +400,13 @@ Respond with ONLY the rewritten bio. No explanation, no quotes.`;
 }
 
 // ── Fallbacks ────────────────────────────────────────────────
+const FALLBACK_CONTEXT = {
+  stage: "early_chat",
+  temperature: "warm",
+  theyFeeling: "interested",
+  risk: null,
+};
+
 const FALLBACK_REPLIES = [
   { type: "flirty",    emoji: "😏", text: "Careful — I might just start thinking about you exclusively. That's a lot of real estate to give up." },
   { type: "funny",     emoji: "😂", text: "Bold of you to assume there's competition. My brain's basically a shrine at this point." },
