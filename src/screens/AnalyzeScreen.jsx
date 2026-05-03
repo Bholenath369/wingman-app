@@ -28,6 +28,7 @@ export default function AnalyzeScreen() {
   const [rejectedStyles, setRejectedStyles] = useState([]);
   const [currentSource, setCurrentSource]   = useState(null);
   const [currentFile, setCurrentFile]       = useState(null);
+  const [activeTone, setActiveTone]         = useState(null);
   const fileRef   = useRef();
   const repliesRef = useRef();
   const { consume, remaining, isPremium, loading: usageLoading } = useUsage();
@@ -104,72 +105,130 @@ export default function AnalyzeScreen() {
 
   const atLimit = !usageLoading && !isPremium && (remaining?.analyze ?? 0) === 0;
 
+  const TONES = [
+    { key: "flirty",     label: "😏 Flirty"     },
+    { key: "confident",  label: "💪 Confident"  },
+    { key: "funny",      label: "😂 Funny"       },
+    { key: "respectful", label: "🤝 Respectful" },
+  ];
+
   return (
-    <div>
-      <div className="hero hero-gradient">
-        <div className="hero-illustration">📱</div>
-        <div className="hero-content">
-          <div className="hero-eyebrow">✨ Your move</div>
-          <h2>Say exactly the right thing</h2>
-          <p>We read the vibe so you always know what to say next.</p>
-        </div>
+    <div style={screenWrap}>
+
+      {/* ── Hero ─────────────────────────────────────── */}
+      <div style={heroWrap}>
+        <div style={heroBadge}>✨ AI Dating Assistant</div>
+        <h1 style={heroHeadline}>Turn texts into<br /><span style={heroAccent}>attraction.</span></h1>
+        <p style={heroSub}>Know exactly what to say — every time.</p>
       </div>
+
+      {/* ── Live Chat Example Card ────────────────────── */}
+      {stage === "upload" && !atLimit && (
+        <div style={chatExCard}>
+          <div style={chatExLabel}>🔥 Live example</div>
+          <div style={chatExBubbleRow}>
+            <div style={bubbleLeft}>
+              <span style={bubbleName}>Her</span>
+              <div style={bubbleMsgLeft}>hey</div>
+            </div>
+          </div>
+          <div style={chatExBubbleRow}>
+            <div style={bubbleRight}>
+              <span style={{ ...bubbleName, textAlign: "right" }}>You</span>
+              <div style={bubbleMsgRight}>hey wanna hang out sometime?</div>
+            </div>
+          </div>
+          <div style={aiReplyRow}>
+            <div style={aiReplyBadge}>⚡ Wingman AI</div>
+            <div style={aiReplyMsg}>"Careful… you might start liking me 😏"</div>
+          </div>
+        </div>
+      )}
 
       {error && <div style={errorStyle}>{error}</div>}
 
+      {/* ── Upload Stage ─────────────────────────────── */}
       {stage === "upload" && !atLimit && (
         <>
+          {/* Screenshot upload */}
           <button
-            className="upload-area"
+            style={uploadCard}
             onClick={() => fileRef.current.click()}
-            onMouseOver={(e) => { e.currentTarget.style.transform = "scale(1.01)"; }}
-            onMouseOut={(e)  => { e.currentTarget.style.transform = ""; }}
-            style={{ transition: "transform 0.2s cubic-bezier(0.34,1.56,0.64,1)" }}
+            onMouseOver={(e) => { e.currentTarget.style.borderColor = "rgba(255,26,108,0.6)"; e.currentTarget.style.transform = "scale(1.01)"; }}
+            onMouseOut={(e)  => { e.currentTarget.style.borderColor = "rgba(255,26,108,0.25)"; e.currentTarget.style.transform = "scale(1)"; }}
           >
-            <div className="upload-icon" style={{ animation: "emojiFloat 2.5s ease-in-out infinite" }}>📱</div>
-            <h3>Drop your screenshot here</h3>
-            <p>WhatsApp · Tinder · Instagram · iMessage</p>
+            <div style={uploadIcon}>📱</div>
+            <div style={uploadTitle}>Drop your screenshot here</div>
+            <div style={uploadSub}>WhatsApp · Tinder · Instagram · iMessage</div>
           </button>
           <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif"
             style={{ display: "none" }} onChange={handleFileChange} />
 
-          <div className="section-label">Or paste conversation text</div>
-          <textarea className="coach-textarea"
-            placeholder="Paste chat messages here..."
-            value={convoText}
-            onChange={(e) => setConvoText(e.target.value)}
-            style={{ height: 100, marginBottom: 10 }}
-          />
+          {/* Divider */}
+          <div style={divider}><span style={dividerText}>or paste conversation</span></div>
+
+          {/* Textarea */}
+          <div style={textareaWrap}>
+            <textarea
+              style={textareaStyle}
+              placeholder={"Her: hey 👋\nYou: hey, what's up?\n..."}
+              value={convoText}
+              onChange={(e) => setConvoText(e.target.value)}
+              rows={4}
+            />
+          </div>
+
+          {/* Tone chips */}
+          <div style={toneRow}>
+            {TONES.map((t) => (
+              <button
+                key={t.key}
+                style={{ ...toneChip, ...(activeTone === t.key ? toneChipActive : {}) }}
+                onClick={() => setActiveTone(activeTone === t.key ? null : t.key)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Main CTA */}
           <button
-            className="btn-primary"
-            style={{ width: "100%", padding: 13, borderRadius: 10, opacity: convoText.trim().length < 5 ? .4 : 1 }}
+            style={{ ...ctaBtn, opacity: convoText.trim().length < 5 ? 0.45 : 1 }}
             disabled={convoText.trim().length < 5}
             onClick={() => { setRejectedStyles([]); runAnalysis({ text: convoText }); }}
           >
-            Analyze conversation →
+            🔥 Get Perfect Reply
           </button>
-          <div style={{ textAlign: "center", marginTop: 14 }}>
+
+          {/* Trust line */}
+          <div style={trustLine}>🔒 Private · Secure · Used by 12,000+ users</div>
+
+          {/* Demo link */}
+          <div style={{ textAlign: "center", marginTop: 10 }}>
             <button
               onClick={() => { setRejectedStyles([]); runAnalysis({ text: DEMO_CONVO }); }}
-              style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none" }}
+              style={demoLink}
             >
               Try with demo conversation
             </button>
           </div>
+
           {!isPremium && !usageLoading && (
-            <div style={{ textAlign: "center", marginTop: 12, fontSize: 12, color: "var(--text3)" }}>
+            <div style={usageNote}>
               {remaining?.analyze ?? 0} free analyses remaining today
             </div>
           )}
         </>
       )}
 
+      {/* ── Limit gate ───────────────────────────────── */}
       {atLimit && <PremiumGate
         title="Daily limit reached"
         description="Upgrade for unlimited analyses, all personas, and deep personality insights."
         features={["Unlimited screenshot analyses","All 4 practice personas","Profile photo analyzer","Bio rewriter"]}
       />}
 
+      {/* ── Typing/loading Stage ─────────────────────── */}
       {stage === "typing" && (
         <>
           {previewImage
@@ -184,6 +243,7 @@ export default function AnalyzeScreen() {
         </>
       )}
 
+      {/* ── Replies Stage ────────────────────────────── */}
       {stage === "replies" && (
         <>
           {previewImage
@@ -195,18 +255,17 @@ export default function AnalyzeScreen() {
               </div>
           }
 
-          {/* Context card */}
           {context && (
             <div style={contextCardStyle}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                <span style={{ ...chip, background: "rgba(232,84,122,0.12)", color: "#F08090" }}>
+                <span style={{ ...chip, background: "rgba(232,84,122,0.15)", color: "#F08090" }}>
                   {STAGE_LABELS[context.stage] || context.stage}
                 </span>
                 <span style={{ ...chip, background: `${TEMP_COLORS[context.temperature]}22`, color: TEMP_COLORS[context.temperature] }}>
                   {context.temperature} vibe
                 </span>
                 {context.theyFeeling && (
-                  <span style={{ ...chip, background: "rgba(124,92,252,0.12)", color: "#9B87F5" }}>
+                  <span style={{ ...chip, background: "rgba(124,92,252,0.15)", color: "#9B87F5" }}>
                     {context.theyFeeling}
                   </span>
                 )}
@@ -255,22 +314,232 @@ export default function AnalyzeScreen() {
   );
 }
 
+/* ─── Styles ──────────────────────────────────────────────────── */
+const screenWrap = {
+  padding: "0 0 24px",
+};
+
+/* Hero */
+const heroWrap = {
+  padding: "28px 20px 20px",
+  textAlign: "center",
+};
+const heroBadge = {
+  display: "inline-block",
+  padding: "5px 14px",
+  background: "rgba(255,26,108,0.12)",
+  border: "1px solid rgba(255,26,108,0.28)",
+  borderRadius: 20,
+  fontSize: 11, fontWeight: 700, color: "#FF1A6C",
+  fontFamily: "'Sora', sans-serif",
+  letterSpacing: "0.4px",
+  marginBottom: 12,
+};
+const heroHeadline = {
+  margin: "0 0 8px",
+  fontSize: 36, fontWeight: 900, lineHeight: 1.1,
+  color: "#fff",
+  fontFamily: "'Outfit', sans-serif",
+  letterSpacing: "-0.5px",
+};
+const heroAccent = {
+  background: "linear-gradient(135deg, #FF1A6C 0%, #A855F7 60%, #00D4FF 100%)",
+  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+};
+const heroSub = {
+  margin: 0, fontSize: 15, color: "rgba(255,255,255,0.55)",
+  fontFamily: "'Sora', sans-serif", lineHeight: 1.5,
+};
+
+/* Chat example card */
+const chatExCard = {
+  margin: "0 16px 18px",
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(157,78,221,0.25)",
+  borderRadius: 18,
+  padding: "16px 16px 14px",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+  boxShadow: "0 4px 32px rgba(157,78,221,0.12)",
+};
+const chatExLabel = {
+  fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)",
+  fontFamily: "'Sora', sans-serif", letterSpacing: "0.8px",
+  textTransform: "uppercase", marginBottom: 10,
+};
+const chatExBubbleRow = { marginBottom: 6 };
+const bubbleName = {
+  display: "block", fontSize: 9, fontWeight: 700,
+  color: "rgba(255,255,255,0.3)", fontFamily: "'Sora', sans-serif",
+  letterSpacing: "0.5px", textTransform: "uppercase", marginBottom: 3,
+};
+const bubbleLeft = { maxWidth: "70%" };
+const bubbleRight = { maxWidth: "70%", marginLeft: "auto" };
+const bubbleMsgLeft = {
+  display: "inline-block",
+  background: "rgba(255,255,255,0.09)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: "14px 14px 14px 4px",
+  padding: "8px 12px", fontSize: 13, color: "#fff",
+  fontFamily: "'Sora', sans-serif",
+};
+const bubbleMsgRight = {
+  display: "inline-block",
+  background: "rgba(157,78,221,0.22)",
+  border: "1px solid rgba(157,78,221,0.3)",
+  borderRadius: "14px 14px 4px 14px",
+  padding: "8px 12px", fontSize: 13, color: "#E0CFFF",
+  fontFamily: "'Sora', sans-serif",
+};
+const aiReplyRow = {
+  marginTop: 10,
+  background: "linear-gradient(135deg, rgba(255,26,108,0.12), rgba(168,85,247,0.14))",
+  border: "1px solid rgba(255,26,108,0.28)",
+  borderRadius: 12, padding: "10px 12px",
+};
+const aiReplyBadge = {
+  fontSize: 10, fontWeight: 700, color: "#FF1A6C",
+  fontFamily: "'Sora', sans-serif", letterSpacing: "0.4px",
+  marginBottom: 5,
+};
+const aiReplyMsg = {
+  fontSize: 14, fontWeight: 600, color: "#fff",
+  fontFamily: "'Outfit', sans-serif",
+};
+
+/* Upload card */
+const uploadCard = {
+  width: "calc(100% - 32px)",
+  margin: "0 16px 10px",
+  display: "flex", flexDirection: "column", alignItems: "center",
+  gap: 6,
+  padding: "22px 16px",
+  background: "rgba(255,255,255,0.04)",
+  border: "1.5px dashed rgba(255,26,108,0.25)",
+  borderRadius: 18,
+  cursor: "pointer",
+  transition: "all 0.2s ease",
+  backdropFilter: "blur(12px)",
+  WebkitBackdropFilter: "blur(12px)",
+};
+const uploadIcon = { fontSize: 32, marginBottom: 2 };
+const uploadTitle = {
+  fontSize: 15, fontWeight: 700, color: "#fff",
+  fontFamily: "'Outfit', sans-serif",
+};
+const uploadSub = {
+  fontSize: 11, color: "rgba(255,255,255,0.38)",
+  fontFamily: "'Sora', sans-serif",
+};
+
+/* Divider */
+const divider = {
+  display: "flex", alignItems: "center", gap: 10,
+  margin: "14px 16px 12px",
+};
+const dividerText = {
+  fontSize: 11, color: "rgba(255,255,255,0.25)",
+  fontFamily: "'Sora', sans-serif", whiteSpace: "nowrap",
+  padding: "0 4px",
+  borderTop: "1px solid rgba(255,255,255,0.08)",
+  width: "100%", textAlign: "center", lineHeight: 0,
+  paddingTop: 8,
+};
+
+/* Textarea */
+const textareaWrap = { padding: "0 16px", marginBottom: 12 };
+const textareaStyle = {
+  width: "100%", boxSizing: "border-box",
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(157,78,221,0.25)",
+  borderRadius: 14, padding: "12px 14px",
+  color: "#fff", fontSize: 13, lineHeight: 1.6,
+  fontFamily: "'Sora', sans-serif",
+  resize: "none", outline: "none",
+};
+
+/* Tone chips */
+const toneRow = {
+  display: "flex", gap: 8, flexWrap: "wrap",
+  padding: "0 16px", marginBottom: 16,
+};
+const toneChip = {
+  padding: "7px 14px",
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  borderRadius: 20, fontSize: 12, fontWeight: 600,
+  color: "rgba(255,255,255,0.55)",
+  fontFamily: "'Sora', sans-serif",
+  cursor: "pointer", transition: "all 0.18s ease",
+};
+const toneChipActive = {
+  background: "linear-gradient(135deg, rgba(255,26,108,0.2), rgba(168,85,247,0.2))",
+  border: "1px solid rgba(255,26,108,0.5)",
+  color: "#FF1A6C",
+  boxShadow: "0 0 12px rgba(255,26,108,0.2)",
+};
+
+/* CTA */
+const ctaBtn = {
+  display: "block", width: "calc(100% - 32px)",
+  margin: "0 16px",
+  padding: "16px 24px",
+  background: "linear-gradient(135deg, #FF1A6C 0%, #A855F7 100%)",
+  border: "none", borderRadius: 16,
+  color: "#fff", fontSize: 17, fontWeight: 800,
+  fontFamily: "'Outfit', sans-serif",
+  cursor: "pointer",
+  boxShadow: "0 8px 32px rgba(255,26,108,0.45), 0 0 0 1px rgba(255,26,108,0.2)",
+  letterSpacing: "-0.2px",
+  transition: "opacity 0.2s",
+};
+
+/* Trust line */
+const trustLine = {
+  textAlign: "center", marginTop: 12,
+  fontSize: 11, color: "rgba(255,255,255,0.28)",
+  fontFamily: "'Sora', sans-serif", letterSpacing: "0.2px",
+};
+
+/* Demo link */
+const demoLink = {
+  fontSize: 12, color: "var(--accent)",
+  background: "none", border: "none",
+  cursor: "pointer", fontFamily: "'Sora', sans-serif",
+  textDecoration: "underline",
+};
+
+/* Usage note */
+const usageNote = {
+  textAlign: "center", marginTop: 10,
+  fontSize: 11, color: "var(--text3)",
+  fontFamily: "'Sora', sans-serif",
+};
+
+/* Misc */
 const errorStyle = {
+  margin: "0 16px 14px",
   background: "rgba(239,68,68,0.1)", border: "0.5px solid rgba(239,68,68,0.3)",
-  borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#FCA5A5",
+  borderRadius: 12, padding: "10px 14px", fontSize: 13, color: "#FCA5A5",
+  fontFamily: "'Sora', sans-serif",
 };
 const previewStyle = {
-  marginBottom: 14, borderRadius: 12, overflow: "hidden",
-  border: "0.5px solid var(--border)", maxHeight: 340,
+  margin: "0 16px 14px", borderRadius: 14, overflow: "hidden",
+  border: "1px solid rgba(157,78,221,0.2)", maxHeight: 340,
+  boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
 };
 const contextCardStyle = {
-  background: "linear-gradient(135deg, rgba(232,84,122,0.06), rgba(124,92,252,0.06))",
-  border: "0.5px solid rgba(232,84,122,0.18)",
-  borderRadius: 12, padding: "12px 14px", marginBottom: 14,
+  margin: "0 16px 14px",
+  background: "linear-gradient(135deg, rgba(232,84,122,0.07), rgba(124,92,252,0.07))",
+  border: "1px solid rgba(232,84,122,0.2)",
+  borderRadius: 14, padding: "12px 14px",
+  backdropFilter: "blur(12px)",
+  WebkitBackdropFilter: "blur(12px)",
   animation: "fadeScale .35s ease",
 };
 const chip = {
   padding: "4px 10px", borderRadius: 20,
   fontSize: 10, fontWeight: 600,
   letterSpacing: "0.3px", textTransform: "capitalize",
+  fontFamily: "'Sora', sans-serif",
 };
