@@ -23,11 +23,11 @@ import { claimReferralBonus } from "./lib/referral";
 import "./index.css";
 
 const TABS = [
-  { id: "analyze",     emoji: "📸", label: "Analyze"  },
-  { id: "personality", emoji: "🧠", label: "Decode"   },
-  { id: "coach",       emoji: "💬", label: "Coach"    },
-  { id: "simulate",    emoji: "🎭", label: "Practice" },
-  { id: "stats",       emoji: "📊", label: "Stats"    },
+  { id: "analyze",     emoji: "📸", label: "Analyze"   },
+  { id: "personality", emoji: "🧠", label: "Personality"},
+  { id: "coach",       emoji: "💬", label: "Coach"     },
+  { id: "simulate",    emoji: "🎭", label: "Practice"  },
+  { id: "stats",       emoji: "📊", label: "Stats"     },
 ];
 
 export default function App() {
@@ -56,7 +56,7 @@ export default function App() {
         />
       );
     }
-    return <LoginScreen />;
+    return <LoginScreen onShowLanding={() => setShowLanding(true)} />;
   }
 
   return <AppInner />;

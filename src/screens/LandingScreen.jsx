@@ -60,7 +60,7 @@ export default function LandingScreen({ onGetStarted }) {
           <WingmanLogoMark size={26} pulse />
           <span style={navWordmark}>Wingman</span>
         </div>
-        <button style={navSignIn} onClick={onGetStarted}>Sign in</button>
+        <button style={navSignIn} onClick={onGetStarted}>Get Started Free</button>
       </div>
 
       {/* Hero */}
@@ -82,7 +82,7 @@ export default function LandingScreen({ onGetStarted }) {
           Your AI dating coach. Turn any conversation into a connection — and stop overthinking every reply.
         </p>
         <button style={ctaPrimary} onClick={onGetStarted}>
-          Start free — no card needed →
+          Get Started Free — No Card Needed →
         </button>
         <p style={freeNote}>Free forever · Upgrade anytime · 30 sec setup</p>
       </div>
@@ -96,6 +96,26 @@ export default function LandingScreen({ onGetStarted }) {
               <span style={featureEmoji}>{f.emoji}</span>
               <h3 style={{ ...featureTitle, color: f.badge }}>{f.title}</h3>
               <p style={featureDesc}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* How it works */}
+      <div style={section}>
+        <div style={sectionLabel}>How it works</div>
+        <div style={howItWorksGrid}>
+          {[
+            { step: "1", title: "Screenshot your chat", desc: "Take a screenshot of any conversation — dating app, text, DM." },
+            { step: "2", title: "AI reads the vibe", desc: "Wingman analyzes tone, interest level, and personality signals." },
+            { step: "3", title: "Pick your best reply", desc: "Get 4 tailored responses. Choose one, copy, and send with confidence." },
+          ].map((s) => (
+            <div key={s.step} style={howStep}>
+              <div style={howStepNum}>{s.step}</div>
+              <div>
+                <div style={howStepTitle}>{s.title}</div>
+                <div style={howStepDesc}>{s.desc}</div>
+              </div>
             </div>
           ))}
         </div>
@@ -133,7 +153,7 @@ export default function LandingScreen({ onGetStarted }) {
 /* ─── Styles ─────────────────────────────────────────────────── */
 const outer = {
   minHeight: "100dvh",
-  background: "linear-gradient(160deg, #06040F 0%, #0D0825 50%, #080415 100%)",
+  background: "linear-gradient(160deg, #1a0533 0%, #2d0b55 50%, #1a0533 100%)",
   position: "relative",
   overflowX: "hidden",
   overflowY: "auto",
@@ -280,4 +300,27 @@ const bottomTitle = {
   color: "rgba(255,255,255,0.9)",
   fontFamily: "'Outfit', sans-serif",
   letterSpacing: "-0.5px", margin: 0,
+};
+const howItWorksGrid = {
+  display: "flex", flexDirection: "column", gap: 14,
+};
+const howStep = {
+  display: "flex", gap: 14, alignItems: "flex-start",
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(157,78,221,0.18)",
+  borderRadius: 14, padding: "14px 16px",
+};
+const howStepNum = {
+  width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+  background: "linear-gradient(135deg, #FF1A6C, #A855F7)",
+  display: "flex", alignItems: "center", justifyContent: "center",
+  fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 14, color: "#fff",
+};
+const howStepTitle = {
+  fontSize: 14, fontWeight: 700, color: "#fff",
+  fontFamily: "'Outfit', sans-serif", marginBottom: 3,
+};
+const howStepDesc = {
+  fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.5,
+  fontFamily: "'Sora', sans-serif",
 };

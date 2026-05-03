@@ -10,7 +10,7 @@ const FEATURES = [
   { icon: "🧠", label: "Know Them First", desc: "Personality insights in seconds" },
 ];
 
-export default function LoginScreen() {
+export default function LoginScreen({ onShowLanding }) {
   return (
     <div style={container}>
       {/* Ambient orbs */}
@@ -85,6 +85,14 @@ export default function LoginScreen() {
       </div>
 
       <p style={terms}>Free to try · No credit card needed</p>
+      {onShowLanding && (
+        <button
+          onClick={onShowLanding}
+          style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", fontSize: 12, fontFamily: "'Sora', sans-serif", cursor: "pointer", textDecoration: "underline", padding: "4px 0" }}
+        >
+          Learn more about Wingman
+        </button>
+      )}
     </div>
   );
 }
