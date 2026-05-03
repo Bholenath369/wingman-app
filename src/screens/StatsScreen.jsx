@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getFullStats, BADGES, checkAndUnlockBadges, DAILY_CHALLENGES } from "../lib/stats";
+import ReferralCard from "../components/ReferralCard";
 
 export default function StatsScreen() {
   const [stats, setStats] = useState(null);
@@ -24,7 +25,7 @@ export default function StatsScreen() {
   return (
     <div>
       {/* Header */}
-      <div className="hero" style={{ background: "linear-gradient(135deg, rgba(0,217,255,0.15), rgba(106,79,255,0.15))" }}>
+      <div className="hero" style={{ background: "linear-gradient(135deg, rgba(0,217,255,0.15), rgba(123,47,190,0.15))" }}>
         <div className="hero-content">
           <div className="hero-eyebrow">📊 Your Stats</div>
           <h2>Level {stats.level}</h2>
@@ -114,7 +115,7 @@ export default function StatsScreen() {
           <div className="progress-bar">
             <div
               className="progress-fill"
-              style={{ width: `${progressPercent}%`, background: stats.challenge.completed ? "linear-gradient(90deg, #4ADE80, #22C55E)" : "linear-gradient(90deg, #FF006E, #FF4B7F)" }}
+              style={{ width: `${progressPercent}%`, background: stats.challenge.completed ? "linear-gradient(90deg, #4ADE80, #22C55E)" : "linear-gradient(90deg, #FF1A6C, #FF5595)" }}
             />
           </div>
           <div style={{ fontSize: 11, color: "var(--text2)", marginTop: 8, textAlign: "center" }}>
@@ -164,6 +165,10 @@ export default function StatsScreen() {
           <span style={{ color: "var(--text)" }}>{stats.shares}</span>
         </div>
       </div>
+      {/* Referral */}
+      <div className="section-label" style={{ marginTop: 20 }}>Invite friends</div>
+      <ReferralCard />
+
     </div>
   );
 }

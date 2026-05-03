@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { analyzeScreenshotSmart, analyzeScreenshotImageSmart } from "../lib/claude";
+import { getWingmanReply } from "../lib/instantReplies";
 import { useUsage } from "../lib/useUsage";
 import { staggerIn, haptic } from "../lib/animations";
 import PremiumGate from "../components/PremiumGate";
@@ -64,7 +65,9 @@ export default function AnalyzeScreen() {
 
     try {
       const result = text
-        ? await analyzeScreenshotSmart(text, { avoidStyles: avoid })
+        ? avoid.length === 0
+          ? await getWingmanReply(text, analyzeScreenshotSmart)
+          : await analyzeScreenshotSmart(text, { avoidStyles: avoid })
         : await analyzeScreenshotImageSmart(file, { avoidStyles: avoid });
       setContext(result.context);
       setReplies(result.replies);
@@ -103,12 +106,12 @@ export default function AnalyzeScreen() {
 
   return (
     <div>
-      <div className="hero hero-with-image">
-        <img className="hero-img" src="/images/hero-analyze.svg" alt="" aria-hidden="true" />
+      <div className="hero hero-gradient">
+        <div className="hero-illustration">📱</div>
         <div className="hero-content">
-          <div className="hero-eyebrow">✦ AI Wingman</div>
-          <h2>Get the perfect reply</h2>
-          <p>Upload any chat screenshot — we'll read the room and write your best move.</p>
+          <div className="hero-eyebrow">✨ Your move</div>
+          <h2>Say exactly the right thing</h2>
+          <p>We read the vibe so you always know what to say next.</p>
         </div>
       </div>
 

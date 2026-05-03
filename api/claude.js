@@ -3,7 +3,9 @@
 // Supports both text and vision (image) requests.
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const MODEL = "claude-sonnet-4-5";
+// Haiku is ~4x cheaper for text. Sonnet only used when vision (image) is needed.
+const MODEL_TEXT   = "claude-haiku-3-5";
+const MODEL_VISION = "claude-sonnet-4-5";
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:5173,http://localhost:5174")
   .split(",")
@@ -125,7 +127,7 @@ export default async function handler(req, res) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: (image && image.data) ? MODEL_VISION : MODEL_TEXT,
         max_tokens: tokens,
         system,
         messages: [{ role: "user", content: messageContent }],

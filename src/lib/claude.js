@@ -4,6 +4,43 @@
 const API_URL = import.meta.env.VITE_API_URL || "";
 const VIBE_KEY = "wingman_user_vibe";
 
+// ── Client-side in-memory cache (text-only calls, cleared on reload) ─
+// Avoids burning API credits when user re-submits the same conversation.
+const _responseCache = new Map();
+function _cacheKey(system, userMessage) {
+  // Simple deterministic key — good enough for same-session dedup
+  return `${system.length}:${userMessage}`;
+}
+
+// ── Input truncation — only send last ~1500 chars of conversation ─
+// Reduces input tokens on every text analysis call without losing context.
+// The last few exchanges are what the AI needs; the full history adds cost.
+function truncateConvo(text, maxChars = 1500) {
+  if (!text || text.length <= maxChars) return text;
+  // Keep the end of the conversation (most recent messages)
+  return "..." + text.slice(-maxChars);
+}
+
+// ── Personality cache (localStorage) ────────────────────────
+// Same conversation → same result. No need to call the API twice.
+const PERSONALITY_CACHE_KEY = "wm_personality_cache";
+function getPersonalityCache(key) {
+  try {
+    const store = JSON.parse(localStorage.getItem(PERSONALITY_CACHE_KEY) || "{}");
+    return store[key] || null;
+  } catch { return null; }
+}
+function setPersonalityCache(key, value) {
+  try {
+    const store = JSON.parse(localStorage.getItem(PERSONALITY_CACHE_KEY) || "{}");
+    store[key] = value;
+    // Keep only last 20 entries
+    const keys = Object.keys(store);
+    if (keys.length > 20) delete store[keys[0]];
+    localStorage.setItem(PERSONALITY_CACHE_KEY, JSON.stringify(store));
+  } catch {}
+}
+
 // ── User vibe persistence (localStorage) ─────────────────────
 export function getUserVibe() {
   try { return JSON.parse(localStorage.getItem(VIBE_KEY)); } catch { return null; }
@@ -12,7 +49,13 @@ export function setUserVibe(vibe) {
   try { localStorage.setItem(VIBE_KEY, JSON.stringify(vibe)); } catch {}
 }
 
-async function callClaude({ system, userMessage, maxTokens = 800, image = null }) {
+async function callClaude({ system, userMessage, maxTokens = 500, image = null }) {
+  // Return cached result for identical text-only calls (no API charge)
+  if (!image) {
+    const key = _cacheKey(system, userMessage);
+    if (_responseCache.has(key)) return _responseCache.get(key);
+  }
+
   const body = { system, userMessage, maxTokens };
   if (image) body.image = image;
 
@@ -27,7 +70,18 @@ async function callClaude({ system, userMessage, maxTokens = 800, image = null }
     throw new Error(err?.error || `API error ${res.status}`);
   }
   const data = await res.json();
-  return data.text ?? "";
+  const text = data.text ?? "";
+
+  // Cache text-only results
+  if (!image) {
+    const key = _cacheKey(system, userMessage);
+    _responseCache.set(key, text);
+    // Limit cache to 50 entries to avoid memory bloat
+    if (_responseCache.size > 50) {
+      _responseCache.delete(_responseCache.keys().next().value);
+    }
+  }
+  return text;
 }
 
 // Strip data URL prefix to get pure base64
@@ -51,8 +105,8 @@ export async function analyzeScreenshot(conversationText) {
   const system = SCREENSHOT_SYSTEM;
   const raw = await callClaude({
     system,
-    userMessage: `Here is the conversation to reply to:\n\n${conversationText}\n\nGenerate 4 reply options.`,
-    maxTokens: 700,
+    userMessage: `Here is the conversation to reply to:\n\n${truncateConvo(conversationText)}\n\nGenerate 4 reply options.`,
+    maxTokens: 400,
   });
   return parseReplies(raw);
 }
@@ -138,8 +192,8 @@ export async function analyzeScreenshotSmart(conversationText, { avoidStyles = [
     : "";
   const raw = await callClaude({
     system: SMART_SYSTEM,
-    userMessage: `Analyze this conversation and generate 4 reply options.\n\n${conversationText}${avoidNote}`,
-    maxTokens: 900,
+    userMessage: `Analyze this conversation and generate 4 reply options.\n\n${truncateConvo(conversationText)}${avoidNote}`,
+    maxTokens: 450,
   });
   return parseSmartResult(raw);
 }
@@ -159,7 +213,7 @@ export async function analyzeScreenshotImageSmart(file, { avoidStyles = [] } = {
       "Read this chat screenshot. Identify who sent which message (left vs right bubbles). " +
       "Analyze the conversation context and generate 4 reply options. Return JSON only." + avoidNote,
     image: img,
-    maxTokens: 1000,
+    maxTokens: 800,
   });
   return parseSmartResult(raw);
 }
@@ -210,17 +264,24 @@ traits: 3-4 descriptive tags.
 mistakes: 2-3 items mixing warn and good feedback about the user's behavior.
 Be specific, psychologically accurate, and never generic.`;
 
+  // Check localStorage cache first
+  const cacheKey = conversationText.slice(-200);
+  const cached = getPersonalityCache(cacheKey);
+  if (cached) return cached;
+
   const raw = await callClaude({
     system,
-    userMessage: `Analyze this conversation:\n\n${conversationText}`,
-    maxTokens: 600,
+    userMessage: `Analyze this conversation:\n\n${truncateConvo(conversationText)}`,
+    maxTokens: 350,
   });
 
   try {
     const clean = raw.replace(/```json|```/g, "").trim();
     const start = clean.indexOf("{");
     const end = clean.lastIndexOf("}");
-    return JSON.parse(clean.slice(start, end + 1));
+    const result = JSON.parse(clean.slice(start, end + 1));
+    setPersonalityCache(cacheKey, result);
+    return result;
   } catch {
     return FALLBACK_PERSONALITY;
   }
@@ -277,7 +338,8 @@ You are in a real text conversation. Respond naturally as this persona would.
 Never break character. Never explain yourself. Just respond as the character would text.
 Keep it SHORT — real people don't write paragraphs in texts.`;
 
-  const recentHistory = conversationHistory.slice(-20);
+  // 8 exchanges is plenty for persona context; keeps input tokens low
+  const recentHistory = conversationHistory.slice(-8);
   const historyText = recentHistory
     .map((m) => `${m.role === "user" ? "Them" : "You"}: ${m.content}`)
     .join("\n");
@@ -320,7 +382,7 @@ Strengths and improvements should reference actual lines or moments when possibl
   const raw = await callClaude({
     system,
     userMessage: `Persona type: ${persona}\n\nConversation:\n${convoText}\n\nScore this conversation.`,
-    maxTokens: 700,
+    maxTokens: 450,
   });
 
   try {

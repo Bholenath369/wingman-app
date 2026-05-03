@@ -4,10 +4,10 @@ import { useUsage } from "../lib/useUsage";
 import PremiumGate from "../components/PremiumGate";
 
 const STYLES = [
-  { key: "attractive", label: "More attractive" },
-  { key: "confident",  label: "More confident"  },
-  { key: "emotional",  label: "More emotional"  },
-  { key: "playful",    label: "Playful"          },
+  { key: "attractive", label: "🔥 Attractive" },
+  { key: "confident",  label: "🎯 Confident"  },
+  { key: "emotional",  label: "❤️ Emotional"  },
+  { key: "playful",    label: "⚡ Playful"      },
 ];
 
 export default function CoachScreen() {
@@ -16,8 +16,31 @@ export default function CoachScreen() {
   const [result, setResult]   = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied]   = useState(false);
+  const [shared, setShared]   = useState(false);
   const [error, setError]     = useState("");
+  const [showHowTo, setShowHowTo] = useState(
+    () => localStorage.getItem("wm_coach_howto") !== "1"
+  );
   const { consume, remaining, isPremium, loading: usageLoading } = useUsage();
+
+  async function shareRewrite() {
+    const preview = text.length > 80 ? text.slice(0, 77) + "..." : text;
+    const shareText = `✍️ Wingman just upgraded my message:\n\nBefore: "${preview}"\n\nAfter: "${result}"\n\nFind the words. Win the heart.\nwingman-six-beta.vercel.app`;
+    if (navigator.share) {
+      try { await navigator.share({ text: shareText, url: "https://wingman-six-beta.vercel.app" }); } catch {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        setShared(true);
+        setTimeout(() => setShared(false), 2500);
+      } catch {}
+    }
+  }
+
+  function dismissHowTo() {
+    setShowHowTo(false);
+    localStorage.setItem("wm_coach_howto", "1");
+  }
 
   async function rewrite(s) {
     if (!text.trim()) return;
@@ -53,12 +76,12 @@ export default function CoachScreen() {
 
   return (
     <div>
-      <div className="hero hero-with-image" style={{ marginBottom: 16 }}>
-        <img className="hero-img" src="/images/hero-coach.svg" alt="" aria-hidden="true" />
+      <div className="hero hero-gradient" style={{ marginBottom: 16 }}>
+        <div className="hero-illustration">✍️</div>
         <div className="hero-content">
-          <div className="hero-eyebrow">💬 Message Coach</div>
-          <h2>Say it better</h2>
-          <p>Type what you want to say — we'll rewrite it to actually land.</p>
+          <div className="hero-eyebrow">� Message Coach</div>
+          <h2>Turn good into irresistible</h2>
+          <p>Words that land. Feelings that stick. Pick a style and watch it transform.</p>
         </div>
       </div>
 
@@ -76,10 +99,17 @@ export default function CoachScreen() {
         </div>
       )}
 
-      <div className="insight-box">
-        <div className="insight-label">How it works</div>
-        <p>Paste your draft, choose a style, and get a rewrite that sounds human, confident, and magnetic.</p>
-      </div>
+      {showHowTo && (
+        <div className="insight-box" style={{ position: "relative" }}>
+          <button
+            onClick={dismissHowTo}
+            style={{ position: "absolute", top: 10, right: 12, background: "none", border: "none", color: "var(--text3)", fontSize: 16, cursor: "pointer", lineHeight: 1 }}
+            aria-label="Dismiss"
+          >×</button>
+          <div className="insight-label">How it works</div>
+          <p>Paste your draft, choose a style, and get a rewrite that sounds human, confident, and magnetic.</p>
+        </div>
+      )}
 
       <textarea
         className="coach-textarea"
@@ -119,6 +149,22 @@ export default function CoachScreen() {
               {copied ? "Copied!" : "Use this reply"}
             </button>
             <button className="btn-ghost" onClick={() => rewrite(style)}>Regenerate</button>
+          </div>
+
+          {/* Before / After share card */}
+          <div className="share-card">
+            <div className="share-card-row">
+              <span className="share-card-label">Before</span>
+              <span className="share-card-text">{text.length > 90 ? text.slice(0, 87) + "..." : text}</span>
+            </div>
+            <div className="share-card-arrow">↓</div>
+            <div className="share-card-row after">
+              <span className="share-card-label">After (✨ {style})</span>
+              <span className="share-card-text">{result}</span>
+            </div>
+            <button className="share-result-btn" onClick={shareRewrite}>
+              {shared ? "✓ Copied to clipboard!" : "Share this transformation 🔗"}
+            </button>
           </div>
 
           {!isPremium && (

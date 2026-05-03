@@ -76,16 +76,33 @@ export default async function handler(req, res) {
   const userId = payload.sub;
 
   const STRIPE_KEY = process.env.STRIPE_SECRET_KEY;
-  const PRICE_ID   = process.env.STRIPE_PRICE_ID;
   const APP_URL    = process.env.APP_URL || "http://localhost:5173";
 
-  if (!STRIPE_KEY || !PRICE_ID) {
+  if (!STRIPE_KEY) {
     return res.status(500).json({ error: "Stripe not configured" });
+  }
+
+  // Parse plan from body — default to "monthly"
+  let body = {};
+  try { body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {}); } catch {}
+  const plan = body.plan || "monthly";
+
+  // Map plan → price ID env var and mode
+  const PLAN_MAP = {
+    "3day":    { envKey: "STRIPE_PRICE_ID_3DAY",   mode: "payment"      },
+    "weekly":  { envKey: "STRIPE_PRICE_ID_WEEKLY",  mode: "subscription" },
+    "monthly": { envKey: "STRIPE_PRICE_ID_MONTHLY", mode: "subscription" },
+  };
+  const planConfig = PLAN_MAP[plan] ?? PLAN_MAP["monthly"];
+  const PRICE_ID = process.env[planConfig.envKey] || process.env.STRIPE_PRICE_ID;
+
+  if (!PRICE_ID) {
+    return res.status(500).json({ error: `No Stripe price configured for plan: ${plan}` });
   }
 
   try {
     const params = new URLSearchParams();
-    params.append("mode", "subscription");
+    params.append("mode", planConfig.mode);
     params.append("line_items[0][price]", PRICE_ID);
     params.append("line_items[0][quantity]", "1");
     params.append("success_url", `${APP_URL}/?upgrade=success&session_id={CHECKOUT_SESSION_ID}`);
@@ -93,8 +110,9 @@ export default async function handler(req, res) {
     params.append("allow_promotion_codes",    "true");
     params.append("automatic_tax[enabled]",   "true");
     params.append("billing_address_collection", "auto");
-    // Attach Clerk user ID to Stripe session for post-upgrade lookup
+    // Attach Clerk user ID + plan to Stripe session for post-upgrade lookup
     params.append("metadata[clerk_user_id]", userId);
+    params.append("metadata[plan]", plan);
 
     const resp = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",

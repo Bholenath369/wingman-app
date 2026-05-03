@@ -138,14 +138,14 @@ export default function SimulateScreen() {
 
   return (
     <div>
-      <div className="hero hero-with-image" style={{ marginBottom: 16 }}>
-        <img className="hero-img" src="/images/hero-simulate.svg" alt="" aria-hidden="true" />
-        <div className="hero-content">
-          <div className="hero-eyebrow">🎭 Simulation Mode</div>
-          <h2>Practice makes perfect</h2>
-          <p>Chat with AI personas that respond realistically. Get comfortable before the real thing.</p>
+        <div className="hero hero-gradient" style={{ marginBottom: 16 }}>
+          <div className="hero-illustration">🎭</div>
+          <div className="hero-content">
+            <div className="hero-eyebrow">🎭 Practice Mode</div>
+            <h2>Get comfortable before it counts</h2>
+            <p>Chat with AI personas that push back. Build the confidence that shows.</p>
+          </div>
         </div>
-      </div>
 
       {error && (
         <div style={{

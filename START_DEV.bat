@@ -33,7 +33,7 @@ echo ============================================
 echo   Starting Vite Dev Server
 echo ============================================
 echo.
-echo Server will be available at: http://localhost:5173
+echo Server will be available at: http://localhost:5174
 echo.
 echo V3 Features Active:
 echo   • Particle network background
@@ -49,6 +49,6 @@ echo.
 echo ============================================
 echo.
 
-call npm run dev
+call npm run dev -- --port 5174
 
 pause

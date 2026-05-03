@@ -96,14 +96,14 @@ export function useUsage() {
   return { ...state, isPremium, refresh, consume };
 }
 
-// Called from PremiumGate.jsx with no args — works via module singleton.
-export async function startCheckout() {
+// Called from PremiumGate.jsx — pass plan: "3day" | "weekly" | "monthly"
+export async function startCheckout(plan = "monthly") {
   try {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/create-checkout`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...headers },
-      body: "{}",
+      body: JSON.stringify({ plan }),
     });
     const data = await res.json();
     if (data.url) {

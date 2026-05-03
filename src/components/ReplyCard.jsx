@@ -134,6 +134,32 @@ export default function ReplyCard({ reply, index, isBest, onThumbsDown }) {
           {copied ? "✓ Copied!" : "Copy reply ↗"}
         </button>
 
+        {/* SMS send button */}
+        <button
+          onClick={() => {
+            haptic("light");
+            const encoded = encodeURIComponent(reply.text);
+            window.open(`sms:?body=${encoded}`, "_self");
+          }}
+          style={{
+            padding: "7px 12px",
+            borderRadius: 20,
+            background: "rgba(34,197,94,0.08)",
+            border: "0.5px solid rgba(34,197,94,0.3)",
+            color: "#4ADE80",
+            fontSize: 11,
+            fontWeight: 600,
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+          title="Send via SMS"
+        >
+          📲 Send
+        </button>
+
         <div style={{ marginLeft: "auto", display: "flex", gap: 2 }}>
           <button
             ref={thumbUpRef}

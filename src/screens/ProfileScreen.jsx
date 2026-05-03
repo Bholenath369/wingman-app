@@ -88,8 +88,8 @@ export default function ProfileScreen() {
   if (!usageLoading && !isPremium) {
     return (
       <div>
-        <div className="hero hero-with-image" style={{ marginBottom: 16 }}>
-          <img className="hero-img" src="/images/hero-profile.svg" alt="" aria-hidden="true" />
+        <div className="hero hero-gradient" style={{ marginBottom: 16 }}>
+          <div className="hero-illustration">🤵</div>
           <div className="hero-content">
             <div className="hero-eyebrow">👤 Profile Lab</div>
             <h2>Optimize your profile</h2>
@@ -112,8 +112,8 @@ export default function ProfileScreen() {
 
   return (
     <div>
-      <div className="hero hero-with-image" style={{ marginBottom: 16 }}>
-        <img className="hero-img" src="/images/hero-profile.svg" alt="" aria-hidden="true" />
+      <div className="hero hero-gradient" style={{ marginBottom: 16 }}>
+        <div className="hero-illustration">🤵</div>
         <div className="hero-content">
           <div className="hero-eyebrow">👤 Profile Lab</div>
           <h2>Optimize your profile</h2>

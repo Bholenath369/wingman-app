@@ -28,8 +28,8 @@ const spinner = {
   width: 36,
   height: 36,
   borderRadius: "50%",
-  border: "3px solid rgba(255,0,110,0.2)",
-  borderTopColor: "#FF006E",
+  border: "3px solid rgba(255,26,108,0.2)",
+  borderTopColor: "#FF1A6C",
   animation: "spin 0.8s linear infinite",
 };
 const msg = {

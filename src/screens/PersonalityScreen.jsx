@@ -21,8 +21,24 @@ export default function PersonalityScreen() {
   const [animated, setAnimated] = useState(false);
   const [convoText, setConvoText] = useState("");
   const [error, setError]       = useState("");
+  const [shared, setShared]     = useState(false);
   const barsRef = useRef(false);
   const { consume } = useUsage();
+
+  async function shareResult() {
+    if (!data) return;
+    const traits = (data.traits || []).slice(0, 2).join(", ");
+    const shareText = `🧠 Wingman just decoded her personality:\n\n✦ Interest: ${data.interest}%\n✦ Type: ${traits}\n✦ "${data.insight}"\n\nFind the words. Win the heart.\nwingman-six-beta.vercel.app`;
+    if (navigator.share) {
+      try { await navigator.share({ text: shareText, url: "https://wingman-six-beta.vercel.app" }); } catch {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        setShared(true);
+        setTimeout(() => setShared(false), 2500);
+      } catch {}
+    }
+  }
 
   async function analyze(text) {
     const check = await consume("personality");
@@ -55,12 +71,12 @@ export default function PersonalityScreen() {
     <div>
       {!data && !loading && (
         <>
-          <div className="hero hero-with-image" style={{ marginBottom: 16 }}>
-            <img className="hero-img" src="/images/hero-profile.svg" alt="" aria-hidden="true" />
+          <div className="hero hero-gradient" style={{ marginBottom: 16 }}>
+            <div className="hero-illustration">🧠</div>
             <div className="hero-content">
               <div className="hero-eyebrow">🧠 Personality Engine</div>
-              <h2>Decode their behavior</h2>
-              <p>Paste the conversation and get a deep read on interest, personality type, and what you're doing right or wrong.</p>
+              <h2>Know them before they know themselves</h2>
+              <p>Paste the conversation — we surface what they're really thinking and feeling.</p>
             </div>
           </div>
           {error && <div style={errorStyle}>{error}</div>}
@@ -162,6 +178,10 @@ export default function PersonalityScreen() {
               </div>
             ))}
           </div>
+
+          <button className="share-result-btn" onClick={shareResult}>
+            {shared ? "✓ Copied to clipboard!" : "Share this analysis 🔗"}
+          </button>
 
           <button className="reset-btn" onClick={() => { setData(null); setConvoText(""); }}>
             ← Analyze different conversation
