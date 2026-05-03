@@ -1,0 +1,33 @@
+<svg width="941" height="1672" viewBox="0 0 941 1672" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="941" height="1672" fill="url(#bg)"/>
+  <g opacity="0.95" filter="url(#glow)">
+    <path d="M470 1030C340 850 128 676 216 462C278 312 447 392 470 512C497 388 660 314 725 462C815 668 600 852 470 1030Z" stroke="url(#heart)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M470 1030C390 812 246 735 165 920C116 1034 206 1183 350 1267" stroke="url(#trailA)" stroke-width="18" stroke-linecap="round" opacity="0.65"/>
+    <path d="M470 1030C550 812 705 735 779 928C829 1059 720 1196 596 1270" stroke="url(#trailB)" stroke-width="18" stroke-linecap="round" opacity="0.65"/>
+  </g>
+  <g opacity="0.7">
+    <circle cx="158" cy="304" r="7" fill="#FF4ECD"/>
+    <circle cx="770" cy="396" r="6" fill="#00C2FF"/>
+    <circle cx="720" cy="230" r="4" fill="#A855F7"/>
+    <circle cx="275" cy="1390" r="24" fill="#FF4ECD" opacity="0.4"/>
+    <circle cx="706" cy="1410" r="34" fill="#7C3AED" opacity="0.35"/>
+    <circle cx="150" cy="1320" r="20" fill="#00C2FF" opacity="0.28"/>
+  </g>
+  <defs>
+    <radialGradient id="bg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(470 760) rotate(90) scale(900 650)">
+      <stop stop-color="#1A0A2E"/>
+      <stop offset="0.46" stop-color="#090316"/>
+      <stop offset="1" stop-color="#020207"/>
+    </radialGradient>
+    <linearGradient id="heart" x1="180" y1="440" x2="770" y2="945" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF006E"/>
+      <stop offset="0.48" stop-color="#FF4ECD"/>
+      <stop offset="1" stop-color="#00C2FF"/>
+    </linearGradient>
+    <linearGradient id="trailA" x1="130" y1="850" x2="430" y2="1280"><stop stop-color="#FF4ECD"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
+    <linearGradient id="trailB" x1="790" y1="850" x2="520" y2="1280"><stop stop-color="#00C2FF"/><stop offset="1" stop-color="#A855F7"/></linearGradient>
+    <filter id="glow" x="40" y="240" width="860" height="1130" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+</svg>
