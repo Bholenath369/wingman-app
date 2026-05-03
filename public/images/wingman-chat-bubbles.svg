@@ -1,0 +1,26 @@
+<svg width="941" height="1672" viewBox="0 0 941 1672" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="941" height="1672" fill="url(#bg)"/>
+  <g filter="url(#glow)">
+    <path d="M178 435C178 366 234 310 303 310H585C654 310 710 366 710 435V579C710 648 654 704 585 704H354L236 805V704H303C234 704 178 648 178 579V435Z" fill="url(#pink)" fill-opacity="0.78" stroke="#FF7BE7" stroke-width="5"/>
+    <path d="M306 784C306 715 362 659 431 659H704C773 659 829 715 829 784V934C829 1003 773 1059 704 1059H524L395 1160V1059H431C362 1059 306 1003 306 934V784Z" fill="url(#blue)" fill-opacity="0.75" stroke="#5DDCFF" stroke-width="5"/>
+    <path d="M329 458C353 416 415 416 439 458C462 500 429 548 384 576C339 548 306 500 329 458Z" fill="#FFE6F7" opacity="0.9"/>
+    <path d="M570 826L602 890L666 922L602 954L570 1018L538 954L474 922L538 890L570 826Z" fill="#B9F3FF" opacity="0.95"/>
+  </g>
+  <g opacity="0.55">
+    <circle cx="190" cy="1210" r="23" fill="#FF4ECD"/>
+    <circle cx="775" cy="1230" r="25" fill="#A855F7"/>
+    <circle cx="760" cy="470" r="18" fill="#FF4ECD"/>
+    <path d="M155 1030C250 930 430 1220 715 1100" stroke="#A855F7" stroke-width="5" opacity="0.75"/>
+    <path d="M220 1258C330 1190 480 1345 705 1240" stroke="#FF4ECD" stroke-width="4" opacity="0.55"/>
+  </g>
+  <defs>
+    <radialGradient id="bg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(500 850) rotate(90) scale(890 640)">
+      <stop stop-color="#1C0734"/>
+      <stop offset="0.55" stop-color="#080318"/>
+      <stop offset="1" stop-color="#020207"/>
+    </radialGradient>
+    <linearGradient id="pink" x1="178" y1="310" x2="710" y2="805"><stop stop-color="#FF006E"/><stop offset="1" stop-color="#A855F7"/></linearGradient>
+    <linearGradient id="blue" x1="306" y1="659" x2="829" y2="1160"><stop stop-color="#00C2FF"/><stop offset="1" stop-color="#6C5CE7"/></linearGradient>
+    <filter id="glow" x="100" y="230" width="810" height="1010" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="10" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+</svg>
